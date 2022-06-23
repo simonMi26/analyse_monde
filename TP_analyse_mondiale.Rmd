@@ -1,0 +1,557 @@
+---
+title: "TP R CEFIM 2022 - Analyse mondiale"
+author: "Edouard GAUDIN"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: 
+  html_document:
+    toc: yes
+editor_options: 
+  markdown: 
+    wrap: 72
+    fig_captions: true
+    number_sections: true
+  chunk_output_type: console
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+	                    warning = FALSE,
+	                    fig.path = "Figures/")
+```
+
+```{r warning=FALSE, include=FALSE}
+
+library(tidyverse)
+library(tidyselect)
+library(readxl)
+library(lubridate)
+library(shiny)
+library(countrycode)
+
+```
+
+# Analyse mondiale :
+
+## Population
+
+```{r POPULATION NETTOYAGE}
+
+# lecture du fichier population, on supprimer les 16 premières lignes et on passe les "..." en NA
+population<-read_xlsx("Population.xlsx",
+                      skip = 16,
+                      na="...") |> 
+  # on filtre pour garder le monde, les continents et les pays
+  filter(Type=="Country/Area" | Type=="Region" | Type=="World")|> 
+  # on supprime les colonnes inutiles
+  select(-1,-2,-4,-7)|> 
+  rename(pays=1) |> 
+  # pivot pour avoir une seule colonne "année"
+  pivot_longer(cols=4:74,
+               names_to="annee",
+               values_to = "population") |> 
+  # on multiplie par 1000 pour avoir la bonne population
+  mutate(population=population*1000) |> 
+  mutate(annee=as.integer(annee))
+
+```
+
+```{r POPULATION GRAPHIQUE}
+
+# on filtre le type pour garder uniquement "World"
+ggplot(population |> 
+         filter(Type=="World") |> 
+         # on calcule l'evolution d'une année à l'autre
+         mutate(evolution=population-lag(population)))+
+  aes(annee, population, fill=evolution)+
+  geom_col()+
+  scale_x_continuous(breaks =seq(1950,2020,5))+
+  # on passe la légende en écriture normale (pas scientifique), et on ajoute un séparateur de millier
+  scale_fill_gradient(low="green", high="red", labels = function(x) {format(x,scientific=FALSE, big.mark=" ")})+
+  labs(fill="Evolution/(an-1)",
+       x="Années",
+       y="Nombre d'habitants",
+       title = "Evolution de la population mondiale")+
+  theme(legend.position=c(0.2,0.8),
+        axis.text.x = element_text(angle=45,
+                                   hjust = 1,
+                                   vjust = 1),
+        legend.background = element_rect(color="black", fill="lightblue"),
+        axis.line = element_line(colour = "black"),
+        panel.background = element_blank())+
+  # on passe l'axe y en écriture normale (pas scientifique), et on ajoute un séparateur de millier
+  scale_y_continuous(labels = function(x) {format(x,scientific=FALSE, big.mark=" ")})
+  
+```
+
+## Energie
+
+```{r ENERGIE NETTOYAGE}
+
+# lecture du fichier énergie
+energie<-read_delim("Energie.csv") |>
+  # on sélectionne uniquement les colonnes qui concernent la population
+  select(1:3,contains("consumption")) |> 
+  # on a des données qu'à partir de 1965
+  filter(year>=1965) |> 
+  # on pivote toutes les consommations
+  pivot_longer(cols=4:16,
+               names_to = "energie",
+               values_to = "consommation") |> 
+  # on supprime le suffixe "_consumption"
+  mutate(energie=str_remove(energie,"_consumption")) |> 
+  # modifications types et noms de colonnes
+  rename(annee=year) |> 
+  mutate(annee=as.integer(annee)) |> 
+  rename(pays=country)
+
+# Création de vecteurs pour les sources et types d'énergies
+
+source_energie<-c("biofuel","coal","gas","hydro","nuclear","oil","solar","wind", "other_renewable")
+type_energie<-c("fossil_fuel", "low_carbon")
+
+```
+
+```{r ENERGIE GRAPHIQUE}
+
+# on filtre pour garder les données mondiales, on récupère uniquement les sources d'énergie
+energie_source<-energie |>
+  filter(pays=="World") |> 
+  filter(!is.na(consommation)) |> 
+  filter(energie %in% source_energie) |> 
+  # on trie l'energie en fonction de la consommation pour la représentation graphique
+  mutate(energie=fct_reorder(energie, -consommation))
+
+# Création du graphique par source d'énergie
+ggplot(energie_source)+
+  aes(annee,consommation, fill=energie, group=energie)+ # on groupe par énergie pour le geom_area()
+  geom_area()+
+  labs(fill="Sources d'énergie",
+       x="Années",
+       y="Consommation (TWh)",
+       title = "Evolution de la consommation par source d'énergie")+
+  theme(legend.position=c(0.3,0.8),
+        axis.text.x = element_text(angle=45,
+                                   hjust = 1,
+                                   vjust = 1),
+        legend.background = element_rect(color="black", fill="lightblue"),
+        axis.line = element_line(colour = "black"),
+        panel.background = element_blank())+
+  # on met la légende en 2 colonnes
+  guides(fill=guide_legend(ncol=3))+
+  scale_x_continuous(breaks=seq(1965,2019,5))+
+  scale_y_continuous(labels = function(x) {format(x,scientific=FALSE, big.mark=" ")})+
+  # utilisation d'une autre palette de couleurs
+  scale_fill_viridis_d()
+
+```
+
+``` {r ENERGIE GRAPHIQUE 2}  
+
+# on filtre pour garder les données mondiales, on récupère uniquement les types d'énergie
+energie_type<-energie |> 
+  filter(pays=="World") |> 
+  filter(!is.na(consommation)) |> 
+  filter(energie %in% type_energie) |> 
+  # on trie l'energie en fonction de la consommation pour la représentation graphique
+  mutate(energie=fct_reorder(energie, -consommation))
+
+# Création du graphique par type d'énergie
+ggplot(energie_type)+
+  aes(annee,consommation, fill=energie, group=energie)+
+  geom_area()+
+  labs(fill="Types d'énergie",
+       x="Années",
+       y="Consommation (TWh)",
+       title = "Evolution de la consommation par type d'énergie")+
+  theme(legend.position=c(0.3,0.8),
+        axis.text.x = element_text(angle=45,
+                                   hjust = 1,
+                                   vjust = 1),
+        legend.background = element_rect(color="black", fill="lightblue"),
+        axis.line = element_line(colour = "black"),
+        panel.background = element_blank())+
+  scale_x_continuous(breaks=seq(1965,2019,5))+
+  scale_y_continuous(labels = function(x) {format(x,scientific=FALSE, big.mark=" ")})+
+  # on change les couleurs
+  scale_fill_manual(values = c("gray","green"))
+
+```
+
+## Nourriture
+
+```{r NOURRITURE NETTOYAGE}
+
+# lecture du fichier nourriture, avec encoding pour les noms de pays
+nourriture<-read_delim("Nourriture.csv", locale=locale(encoding = "ISO-8859-1")) |> 
+  # on supprime les colonnes qui finissent par F
+  select(-ends_with("F")) |> 
+  # on garde uniquement les lignes qui contiennent "Total" ou "Primary"
+  filter(str_detect(Item, pattern="Total|Primary")) |> 
+  # on supprime les suffixes
+  mutate(Item=str_remove(Item, ", Total| Primary")) |> 
+  # on pivote pour avoir une seule colonne "année"
+  pivot_longer(cols=8:67,
+               names_to = "annee",
+               values_to = "valeur") |> 
+  # on replace la colonne unité
+  relocate(Unit, .after=valeur) |> 
+  # modifications des types et noms de colonnes
+  mutate(annee=as.integer(parse_number(annee)))|> 
+  rename(pays=Area, produit=Item) |> 
+  # suppression des lignes inutiles
+  select(-`Item Code`, -`Element Code`, -`Area Code`) |> 
+  # on garde uniquement la Production de nourriture
+  filter(Element=="Production") |> 
+  mutate(pays=str_replace(pays, "USSR", "Russian Federation"), 
+         pays=str_replace(pays,"Ethiopia PDR", "Ethiopia")) |> 
+  mutate(pays=str_replace(pays,"Sudan \\(former\\)", "Sudan")) 
+
+```
+
+```{r NOURRITURE GRAPHIQUE}
+
+# Création du graphique de la nourriture mondiale
+ggplot(nourriture |> 
+         filter(pays=="World") |> 
+         mutate(produit=fct_reorder(produit, -valeur)))+ # on trie la colonne produit en fonction des valeurs
+  aes(annee,valeur, fill=produit, group=produit)+
+  geom_area()+
+  labs(fill="Produits",
+       x="Années",
+       y="Production (tonnes)",
+       title = "Evolution de la production de nourriture")+
+  theme(legend.position=c(0.3,0.8),
+        axis.text.x = element_text(angle=45,
+                                   hjust = 1,
+                                   vjust = 1),
+        legend.background = element_rect(color="black", fill="lightblue"),
+        axis.line = element_line(colour = "black"),
+        panel.background = element_blank())+
+  guides(fill=guide_legend(ncol=3))+
+  scale_x_continuous(breaks=seq(1965,2019,5))+
+  scale_y_continuous(labels = function(x) {format(x,scientific=FALSE, big.mark=" ")})
+
+```
+
+# Analyse continentale
+
+```{r LECTURE FICHIER ISO}
+
+# on lit le fichier iso qui nous permettra de faire des liens avec nos tableaux de données
+iso<-read_delim("iso.txt")
+
+# nettoyage
+iso_clean<-iso |> 
+  select(1,3,4,6) |>
+  rename(Country_code=3) |>
+  mutate(Country_code=as.numeric(Country_code))
+
+```
+
+## Population
+
+```{r POPULATION CONTINENT GRAPHIQUE}
+
+# Création du graphiqueen filtrant sur les continents ("region")
+population |>
+  filter(Type=="Region") |>
+  ggplot()+
+  aes(annee,population,colour=pays)+
+  geom_point(size=3)+
+  geom_line(size=3)+
+  scale_y_continuous(labels = function(x){format(x,scientific=FALSE,big.mark=" ")})+
+  labs(colour="Continent",
+       x="Années",
+       y="Nombre d’habitants",
+       title = "Evolution de la population mondiale par continent")+
+  theme(legend.position=c(0.2,0.8),
+        axis.text.x = element_text(angle=45,
+                                   hjust = 1,
+                                   vjust = 1),
+        legend.background = element_rect(color="black", fill="lightblue"),
+        axis.line = element_line(colour = "black"),
+        panel.background = element_blank())
+
+```
+
+
+## Energie
+
+```{r TABLEAU CONTINENTS}
+
+# création d'un tableau permettant de récupérer les continents dans le fichier iso
+energie_continent<-inner_join(energie,iso_clean,by=c("iso_code"="alpha-3")) |>
+  select(-name,-Country_code) |> 
+  group_by(region, annee, energie) |> # on groupe par continent et type d'energie
+  summarise(consommation=sum(consommation, na.rm = TRUE))|> # on fait la somme des consommations par continent, annee et energie
+  mutate(energie=fct_reorder(energie, -consommation))
+
+```
+
+```{r ENERGIE CONTINENTALE PAR SOURCE D_ENERGIE}
+
+#  création du graphique par source d'énergie
+ggplot(energie_continent |> filter(energie %in% source_energie))+
+  aes(annee,consommation, fill=energie, group=energie)+
+  geom_area()+
+  labs(fill="Sources d'énergie",
+       x="Années",
+       y="Consommation (TWh)",
+       title = "Evolution de la consommation par source d'énergie")+
+  theme(legend.position=c(0.85,0.2),
+        axis.text.x = element_text(angle=45,
+                                   hjust = 1,
+                                   vjust = 1),
+        legend.background = element_rect(color="black", fill="lightblue"),
+        axis.line = element_line(colour = "black"),
+        panel.background = element_blank())+
+  # on met les continents en facette en libérant les axes
+  facet_wrap(~region, scales="free")+
+  guides(fill=guide_legend(ncol=2))+
+  scale_x_continuous(breaks=seq(1950,2019,5))+
+  scale_y_continuous(labels = function(x) {format(x,scientific=FALSE, big.mark=" ")})+
+  scale_fill_viridis_d()
+
+
+```
+
+```{r ENERGIE CONTINENTALE PAR TYPE D_ENERGIE}
+
+#  création du graphique par source d'énergie
+ggplot(energie_continent |> filter(energie %in% type_energie))+
+  aes(annee,consommation, fill=energie, group=energie)+
+  geom_area()+
+  labs(fill="Types d'énergie",
+       x="Années",
+       y="Consommation (TWh)",
+       title = "Evolution de la consommation par type d'énergie")+
+  theme(legend.position=c(0.85,0.4),
+        axis.text.x = element_text(angle=45,
+                                   hjust = 1,
+                                   vjust = 1),
+        legend.background = element_rect(color="black", fill="lightblue"),
+        axis.line = element_line(colour = "black"),
+        panel.background = element_blank())+
+  facet_wrap(~region, scales="free")+
+  guides(fill=guide_legend(ncol=2))+
+  scale_x_continuous(breaks=seq(1950,2019,5))+
+  scale_y_continuous(labels = function(x) {format(x,scientific=FALSE, big.mark=" ")})+
+  scale_fill_manual(values = c("gray","green"))
+```
+
+
+## Nourriture
+
+```{r GRAPHIQUE NOURRITURE}
+
+# Création du graphique de la nourriture en filtrant les continents
+ggplot(nourriture |> filter(pays %in% c("Americas", "Asia", "Oceania", "Europe", "Africa")) |> mutate(produit=fct_reorder(produit, -valeur)))+
+  aes(annee,valeur, fill=produit, group=produit)+
+  geom_area()+
+  facet_wrap(~pays, scales = "free")+
+  labs(fill="Produits",
+       x="Années",
+       y="Production (tonnes)")+
+  theme(legend.position=c(0.82,0.25),
+        axis.text.x = element_text(angle=45,
+                                   hjust = 1,
+                                   vjust = 1),
+        legend.background = element_rect(color="black", fill="lightblue"),
+        axis.line = element_line(colour = "black"),
+        panel.background = element_blank())+
+  guides(fill=guide_legend(ncol=2))+
+  scale_x_continuous(breaks=seq(1965,2019,5))+
+  scale_y_continuous(labels = function(x) {format(x,scientific=FALSE, big.mark=" ")})
+
+```
+
+# Analyse par pays
+
+## Population
+
+```{r CARTE CHOROPLETHE POPULATION}
+
+# on charge le fichier world data pour générer les coordonnées des pays
+world_map<-map_data("world") |> 
+  mutate(iso_code=countrycode(region,origin="country.name",destination="iso3n")) |>
+  mutate(iso_code2=countrycode(region,origin="country.name",destination="iso3c")) # création d'isocodes pour les pays
+
+
+# on filtre pour avoir les pays et la dernière année
+population_pays<-population|> filter(Type=="Country/Area" & annee==2020)
+# jointure entre le tableau des pays et les coordonnées
+population_coord <-left_join(population_pays,world_map,by=c("Country code"="iso_code")) 
+
+# Création de la carte
+ggplot(population_coord)+
+  aes(x=long,y=lat,group=group)+
+  geom_polygon(aes(fill=population),colour="black")+
+  scale_fill_gradient(low="lightblue", high="red",labels = function(x) {format(x,scientific=FALSE, big.mark=" ")})+
+  theme(legend.position=c(0.1,0.3),
+        legend.background = element_rect(color="black", fill="lightblue"),
+        axis.text = element_blank(),
+        axis.title = element_blank()
+  )
+
+```
+
+## Energie
+
+```{r CARTE CHOROPLETHE ENERGIE}
+
+# on charge le fichier world data pour générer les coordonnées des pays
+world_map<-map_data("world")|> 
+  # on génère un isocode par pays
+  mutate(iso_code2=countrycode(region, origin = "country.name", destination = "iso3c"))
+
+# on filtre sur l'année 2016 qui a le plus de données et sur "primary energy" qui est le total de toutes les énergies
+energie_primary_2016<-energie |> 
+  filter(annee==2016, energie=="primary_energy") |>
+  drop_na(iso_code) # on supprime les NA de la colonne isocode pour ne garder que les pays qui ont un isocode (car sinon bug lors de la fusion avec world_map, il fusionne les NA ensemble et des petits pays se retrouvent avec des mauvaises valeurs)
+  
+# on fusionne le tableau d'energie 2016 avec world_map
+energie_carte<-world_map |> 
+  mutate(group=as_factor(group),
+         region=as_factor(region)) |> 
+  inner_join(energie_primary_2016, by = c("iso_code2"="iso_code"))
+
+# création de la carte
+ggplot(energie_carte)+
+  aes(long,lat,group=group)+
+  geom_polygon(aes(fill=consommation), colour="black")+
+  # on change les couleurs du gradient
+  scale_fill_gradient(low="green", high="red")+
+  labs(fill = "Conso d'énergie")+
+  theme(legend.position=c(0.1,0.3),
+        legend.background = element_rect(color="black", fill="lightblue"),
+        axis.text  = element_blank(),
+        axis.title = element_blank())
+
+```
+
+## Nourriture
+
+```{r CARTE CHOROPLETHE NOURRITURE}
+
+# on filtre sur l'année 2020
+nourriture_2020 <- nourriture |>
+  filter(annee == 2020) |> 
+  group_by(pays) |> 
+  summarise(valeur = sum(valeur, na.rm = TRUE)) |> # on fait la somme de tous les produits
+  filter(valeur != 0) |> 
+  filter(pays != "World" & pays!="China") |> # on supprime le monde et la chine qui est décomposée dans le tableau
+  mutate(iso_code2=countrycode(pays, origin = "country.name", destination = "iso3c")) |> # on génère l'isocode
+  filter(!is.na(iso_code2)) # on supprime les NA
+
+# on fusionne le tableau 2020 avec les données world_map
+nourriture_map<-inner_join(nourriture_2020, world_map, by = c("iso_code2" = "iso_code2"))
+
+# Création du graphique de la nourriture
+ggplot(nourriture_map)+
+  aes(x=long,y=lat,group=group)+
+  geom_polygon(aes(fill = valeur),colour="black")+
+  scale_fill_gradient( low = "yellow2", high = "red2", labels = function(x) {format(x,scientific=FALSE, big.mark=" ")})+
+  labs(fill = "Production(tonnes)")+
+  theme(legend.position=c(0.1,0.3),
+        legend.background = element_rect(color="black", fill="lightblue"),
+        axis.text  = element_blank(),
+        axis.title = element_blank())
+
+```
+
+<!-- ```{r CREATION DES FICHIERS POUR SHINY APP PAYS} -->
+
+<!-- # on crée 3 fichiers dans lesquels on garde la liste des pays pour la shinyApp.  -->
+<!-- # on recrée tous les noms de pays à partir des isocodes pour avoir la même orthographe dans chaque fichier -->
+
+<!-- nourriture_pays<-nourriture |>  -->
+<!--   mutate(iso_code2=countrycode(pays, origin = "country.name", destination = "iso3c")) |>  -->
+<!--   filter(pays!="China") |> # on supprime la Chine car déjà comprise dans les divisions de la chine -->
+<!--   drop_na(iso_code2) |>  -->
+<!--   mutate(pays2=countrycode(iso_code2, origin = "iso3c", destination = "country.name")) |>  -->
+<!--   select(-pays) |>  -->
+<!--   rename(pays=pays2) -->
+
+<!-- energie_pays<-energie |>  -->
+<!--   drop_na(iso_code)|>  -->
+<!--   mutate(pays2=countrycode(iso_code, origin = "iso3c", destination = "country.name")) |>  -->
+<!--   drop_na(pays2) |>  -->
+<!--   select(-pays) |>  -->
+<!--   rename(pays=pays2) -->
+
+<!-- population_pays<-population |>  -->
+<!--   mutate(iso_code2=countrycode(pays,origin="country.name", destination="iso3c")) |>  -->
+<!--   drop_na(iso_code2) |>  -->
+<!--   select(4:6) |>  -->
+<!--   mutate(pays=countrycode(iso_code2, origin = "iso3c", destination = "country.name")) -->
+
+<!-- # on exporte en csv pour les réutiliser -->
+<!-- write_csv(population_pays, "population_pays.csv") -->
+<!-- write_csv(energie_pays, "energie_pays.csv") -->
+<!-- write_csv(nourriture_pays, "nourriture_pays.csv") -->
+
+<!-- ``` -->
+
+<!-- ```{r CREATION DES FICHIERS POUR SHINY APP CARTES} -->
+
+<!-- # on crée 3 fichiers dans lesquels on stock les coordonnées des payspour les réutiliser sur les cartes dans shinyApp -->
+
+<!-- world_map<-map_data("world")|>  -->
+<!--   mutate(iso_code2=countrycode(region, origin = "country.name", destination = "iso3c")) -->
+
+<!-- #Nourriture -->
+
+<!-- nourriture_annee <- nourriture |> -->
+<!--   group_by(pays, annee) |>  -->
+<!--   summarise(valeur = sum(valeur, na.rm = TRUE)) |>  -->
+<!--   filter(valeur != 0) |>  -->
+<!--   filter(pays != "World" & pays!="China") |>  -->
+<!--   mutate(iso_code2=countrycode(pays, origin = "country.name", destination = "iso3c")) |>  -->
+<!--   filter(!is.na(iso_code2)) |>  -->
+<!--   ungroup() |> -->
+<!--   complete(annee, nesting(pays, iso_code2)) -->
+
+
+<!-- nourriture_carte<-inner_join(nourriture_annee, world_map, by = c("iso_code2" = "iso_code2")) -->
+
+
+
+
+<!-- # Energie -->
+
+<!-- energie_primary<-energie |>  -->
+<!--   filter(energie=="primary_energy") |> -->
+<!--   complete(annee, nesting(energie, pays, iso_code)) |>  -->
+<!--   drop_na(iso_code) -->
+
+<!-- energie_carte<-world_map |> -->
+<!--   inner_join(energie_primary, by = c("iso_code2"="iso_code")) |>  -->
+<!--   select(-(4:7)) -->
+
+
+
+
+<!-- # Population -->
+<!-- world_map_pop<-map_data("world") |>  -->
+<!--   mutate(iso_code=countrycode(region,origin="country.name",destination="iso3n")) |> -->
+<!--   mutate(iso_code2=countrycode(region,origin="country.name",destination="iso3c")) -->
+
+<!-- population_carte <-left_join(population |> filter(Type=="Country/Area"),world_map_pop,by=c("Country code"="iso_code"))  -->
+
+
+
+
+<!-- # on exporte en csv pour les réutiliser -->
+<!-- # write_csv(population_carte, "population_carte.csv") -->
+<!-- # write_csv(energie_carte, "energie_carte.csv") -->
+<!-- # write_csv(nourriture_carte, "nourriture_carte.csv") -->
+
+<!-- save(nourriture_carte, file="nourriture_carte.rdata") -->
+<!-- save(population_carte, file="population_carte.rdata") -->
+<!-- save(energie_carte, file="energie_carte.rdata") -->
+
+
+<!-- ``` -->
+
+
