@@ -10,3 +10,4 @@ analyse-par-pays
 population-2
 energie-2
 nourriture-2
+shinyapp

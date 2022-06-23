@@ -20,7 +20,7 @@
   
   
 
-<meta name="author" content="Edouard GAUDIN" />
+<meta name="author" content="Simon Michelet" />
 
 
 
@@ -30,7 +30,7 @@
   
   
 <link rel="prev" href="analyse-continentale.html"/>
-
+<link rel="next" href="shinyapp.html"/>
 <script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -91,6 +91,7 @@
 <li class="chapter" data-level="3.2" data-path="analyse-par-pays.html"><a href="analyse-par-pays.html#energie-2"><i class="fa fa-check"></i><b>3.2</b> Energie</a></li>
 <li class="chapter" data-level="3.3" data-path="analyse-par-pays.html"><a href="analyse-par-pays.html#nourriture-2"><i class="fa fa-check"></i><b>3.3</b> Nourriture</a></li>
 </ul></li>
+<li class="chapter" data-level="4" data-path="shinyapp.html"><a href="shinyapp.html"><i class="fa fa-check"></i><b>4</b> ShinyApp</a></li>
 <li class="divider"></li>
 <li><a href="https://bookdown.org" target="blank">Published with bookdown</a></li>
 
@@ -124,69 +125,6 @@
 <div id="nourriture-2" class="section level2 hasAnchor" number="3.3">
 <h2><span class="header-section-number">3.3</span> Nourriture<a href="analyse-par-pays.html#nourriture-2" class="anchor-section" aria-label="Anchor link to header"></a></h2>
 <p><img src="Figures/CARTE%20CHOROPLETHE%20NOURRITURE-1.png" width="672" /></p>
-<!-- ```{r CREATION DES FICHIERS POUR SHINY APP PAYS} -->
-<!-- # on crée 3 fichiers dans lesquels on garde la liste des pays pour la shinyApp.  -->
-<!-- # on recrée tous les noms de pays à partir des isocodes pour avoir la même orthographe dans chaque fichier -->
-<!-- nourriture_pays<-nourriture |>  -->
-<!--   mutate(iso_code2=countrycode(pays, origin = "country.name", destination = "iso3c")) |>  -->
-<!--   filter(pays!="China") |> # on supprime la Chine car déjà comprise dans les divisions de la chine -->
-<!--   drop_na(iso_code2) |>  -->
-<!--   mutate(pays2=countrycode(iso_code2, origin = "iso3c", destination = "country.name")) |>  -->
-<!--   select(-pays) |>  -->
-<!--   rename(pays=pays2) -->
-<!-- energie_pays<-energie |>  -->
-<!--   drop_na(iso_code)|>  -->
-<!--   mutate(pays2=countrycode(iso_code, origin = "iso3c", destination = "country.name")) |>  -->
-<!--   drop_na(pays2) |>  -->
-<!--   select(-pays) |>  -->
-<!--   rename(pays=pays2) -->
-<!-- population_pays<-population |>  -->
-<!--   mutate(iso_code2=countrycode(pays,origin="country.name", destination="iso3c")) |>  -->
-<!--   drop_na(iso_code2) |>  -->
-<!--   select(4:6) |>  -->
-<!--   mutate(pays=countrycode(iso_code2, origin = "iso3c", destination = "country.name")) -->
-<!-- # on exporte en csv pour les réutiliser -->
-<!-- write_csv(population_pays, "population_pays.csv") -->
-<!-- write_csv(energie_pays, "energie_pays.csv") -->
-<!-- write_csv(nourriture_pays, "nourriture_pays.csv") -->
-<!-- ``` -->
-<!-- ```{r CREATION DES FICHIERS POUR SHINY APP CARTES} -->
-<!-- # on crée 3 fichiers dans lesquels on stock les coordonnées des payspour les réutiliser sur les cartes dans shinyApp -->
-<!-- world_map<-map_data("world")|>  -->
-<!--   mutate(iso_code2=countrycode(region, origin = "country.name", destination = "iso3c")) -->
-<!-- #Nourriture -->
-<!-- nourriture_annee <- nourriture |> -->
-<!--   group_by(pays, annee) |>  -->
-<!--   summarise(valeur = sum(valeur, na.rm = TRUE)) |>  -->
-<!--   filter(valeur != 0) |>  -->
-<!--   filter(pays != "World" & pays!="China") |>  -->
-<!--   mutate(iso_code2=countrycode(pays, origin = "country.name", destination = "iso3c")) |>  -->
-<!--   filter(!is.na(iso_code2)) |>  -->
-<!--   ungroup() |> -->
-<!--   complete(annee, nesting(pays, iso_code2)) -->
-<!-- nourriture_carte<-inner_join(nourriture_annee, world_map, by = c("iso_code2" = "iso_code2")) -->
-<!-- # Energie -->
-<!-- energie_primary<-energie |>  -->
-<!--   filter(energie=="primary_energy") |> -->
-<!--   complete(annee, nesting(energie, pays, iso_code)) |>  -->
-<!--   drop_na(iso_code) -->
-<!-- energie_carte<-world_map |> -->
-<!--   inner_join(energie_primary, by = c("iso_code2"="iso_code")) |>  -->
-<!--   select(-(4:7)) -->
-<!-- # Population -->
-<!-- world_map_pop<-map_data("world") |>  -->
-<!--   mutate(iso_code=countrycode(region,origin="country.name",destination="iso3n")) |> -->
-<!--   mutate(iso_code2=countrycode(region,origin="country.name",destination="iso3c")) -->
-<!-- population_carte <-left_join(population |> filter(Type=="Country/Area"),world_map_pop,by=c("Country code"="iso_code"))  -->
-<!-- # on exporte en csv pour les réutiliser -->
-<!-- # write_csv(population_carte, "population_carte.csv") -->
-<!-- # write_csv(energie_carte, "energie_carte.csv") -->
-<!-- # write_csv(nourriture_carte, "nourriture_carte.csv") -->
-<!-- save(nourriture_carte, file="nourriture_carte.rdata") -->
-<!-- save(population_carte, file="population_carte.rdata") -->
-<!-- save(energie_carte, file="energie_carte.rdata") -->
-<!-- ``` -->
-
 </div>
 </div>
             </section>
@@ -194,8 +132,8 @@
           </div>
         </div>
       </div>
-<a href="analyse-continentale.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-
+<a href="analyse-continentale.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="shinyapp.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>

@@ -1,6 +1,6 @@
 ---
 title: "TP R CEFIM 2022 - Analyse mondiale"
-author: "Edouard GAUDIN"
+author: "Simon Michelet"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output: 
   html_document:
@@ -460,6 +460,13 @@ ggplot(nourriture_map)+
 
 ```
 
+# ShinyApp
+
+```{r ShinyApp}
+
+knitr::include_app("https://mmaillet.shinyapps.io/Analyses_Mondiales/?_ga=2.94373340.1524096991.1655824260-1647850945.1655373829")
+
+```
 <!-- ```{r CREATION DES FICHIERS POUR SHINY APP PAYS} -->
 
 <!-- # on crée 3 fichiers dans lesquels on garde la liste des pays pour la shinyApp.  -->
