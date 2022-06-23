@@ -9,7 +9,7 @@ bookdown::gitbook:
       before: |
         <li><a href="./">Bookdown : Analyse mondiale</a></li>
       after: |
-        <li><a href="https://bookdown.org" target="blank">Published with bookdown</a></li>
+        <li><a href="https://mmaillet.shinyapps.io/Analyses_Mondiales/?_ga=2.94373340.1524096991.1655824260-1647850945.1655373829" target="blank">ShinyApp</a></li>
     download: ["pdf"]
 #bookdown::pdf_book:
 #  includes:
