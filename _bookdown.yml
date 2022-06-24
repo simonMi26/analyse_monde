@@ -1,7 +1,7 @@
 book_filename: "series"
 language:
   ui:
-    chapter_name: "Chapter "
+    chapter_name: ""
 rmd_files: [
   "index.Rmd",
   "TP_analyse_mondiale.Rmd"]

@@ -1,5 +1,5 @@
 ---
-title: "TP R CEFIM 2022 - Analyse mondiale"
+title: "Analyse mondiale"
 author: "Simon Michelet"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output: 
@@ -35,6 +35,7 @@ library(countrycode)
 
 ## Population
 
+On constate que la population mondiale augmente de façon linéaire, avec une augmentation plus marquée durant les années 1985-1990.
 ```{r POPULATION NETTOYAGE}
 
 # lecture du fichier population, on supprimer les 16 premières lignes et on passe les "..." en NA
@@ -86,6 +87,7 @@ ggplot(population |>
 
 ## Energie
 
+On constate que la consommation d'énergie est en constante augmentation depuis 1965, les trois principales sources d'énergie sont le pétrole, le charbon et le gaz.
 ```{r ENERGIE NETTOYAGE}
 
 # lecture du fichier énergie
@@ -145,7 +147,7 @@ ggplot(energie_source)+
   scale_fill_viridis_d()
 
 ```
-
+Les énergies bas carbone, sont en augmentation mais reste très peu utilisées comparé aux énergies fossiles. 
 ``` {r ENERGIE GRAPHIQUE 2}  
 
 # on filtre pour garder les données mondiales, on récupère uniquement les types d'énergie
@@ -180,6 +182,7 @@ ggplot(energie_type)+
 
 ## Nourriture
 
+Depuis 1961, la production de nourriture est en perpétuelle augmentation, les céréales restent le type d'aliment numéro 1 dans le monde. 
 ```{r NOURRITURE NETTOYAGE}
 
 # lecture du fichier nourriture, avec encoding pour les noms de pays
@@ -251,6 +254,7 @@ iso_clean<-iso |>
 
 ## Population
 
+L'Asie est le continent le plus peuplé et de loin, sa population augmentent de façon significative, tout comme en Afrique. Le continent européen voit sa population stagné.  
 ```{r POPULATION CONTINENT GRAPHIQUE}
 
 # Création du graphiqueen filtrant sur les continents ("region")
@@ -278,6 +282,7 @@ population |>
 
 ## Energie
 
+L'Asie et l'Afrique ont une consommation d'énergie en très forte augmentation depuis 1965, cependant ce sont les continents qui utilisent le moins d'énergie bas carbone.
 ```{r TABLEAU CONTINENTS}
 
 # création d'un tableau permettant de récupérer les continents dans le fichier iso
@@ -343,6 +348,7 @@ ggplot(energie_continent |> filter(energie %in% type_energie))+
 
 ## Nourriture
 
+On peut observer que la production de nourriture en fonction de la région du monde est différente , la proportion de céréale produit en Europe est plus importante que pour les autres continents. 
 ```{r GRAPHIQUE NOURRITURE}
 
 # Création du graphique de la nourriture en filtrant les continents
@@ -368,8 +374,10 @@ ggplot(nourriture |> filter(pays %in% c("Americas", "Asia", "Oceania", "Europe",
 
 # Analyse par pays
 
+Les données présentées ci-dessous correspondent à l'année 2016. 
 ## Population
 
+La Chine et l'Inde représentent une partie très importante de la population mondiale. 
 ```{r CARTE CHOROPLETHE POPULATION}
 
 # on charge le fichier world data pour générer les coordonnées des pays
@@ -398,6 +406,7 @@ ggplot(population_coord)+
 
 ## Energie
 
+La Chine et les USA sont les deux plus gros consommateurs d'énergie.
 ```{r CARTE CHOROPLETHE ENERGIE}
 
 # on charge le fichier world data pour générer les coordonnées des pays
@@ -432,6 +441,7 @@ ggplot(energie_carte)+
 
 ## Nourriture
 
+La Chine, l'Inde, le Brésil et USA sont les pays qui produisent le plus de nourriture. 
 ```{r CARTE CHOROPLETHE NOURRITURE}
 
 # on filtre sur l'année 2020

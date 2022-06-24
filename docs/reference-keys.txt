@@ -8,7 +8,6 @@ population-1
 energie-1
 nourriture-1
 analyse-par-pays
-population-2
 energie-2
 nourriture-2
 shinyapp
