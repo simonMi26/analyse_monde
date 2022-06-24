@@ -375,6 +375,7 @@ ggplot(nourriture |> filter(pays %in% c("Americas", "Asia", "Oceania", "Europe",
 # Analyse par pays
 
 Les données présentées ci-dessous correspondent à l'année 2016. 
+
 ## Population
 
 La Chine et l'Inde représentent une partie très importante de la population mondiale. 
@@ -386,8 +387,8 @@ world_map<-map_data("world") |>
   mutate(iso_code2=countrycode(region,origin="country.name",destination="iso3c")) # création d'isocodes pour les pays
 
 
-# on filtre pour avoir les pays et la dernière année
-population_pays<-population|> filter(Type=="Country/Area" & annee==2020)
+# on filtre pour avoir les pays et l'année 2016
+population_pays<-population|> filter(Type=="Country/Area" & annee==2016)
 # jointure entre le tableau des pays et les coordonnées
 population_coord <-left_join(population_pays,world_map,by=c("Country code"="iso_code")) 
 
@@ -444,9 +445,9 @@ ggplot(energie_carte)+
 La Chine, l'Inde, le Brésil et USA sont les pays qui produisent le plus de nourriture. 
 ```{r CARTE CHOROPLETHE NOURRITURE}
 
-# on filtre sur l'année 2020
-nourriture_2020 <- nourriture |>
-  filter(annee == 2020) |> 
+# on filtre sur l'année 2016
+nourriture_2016 <- nourriture |>
+  filter(annee == 2016) |> 
   group_by(pays) |> 
   summarise(valeur = sum(valeur, na.rm = TRUE)) |> # on fait la somme de tous les produits
   filter(valeur != 0) |> 
@@ -454,8 +455,8 @@ nourriture_2020 <- nourriture |>
   mutate(iso_code2=countrycode(pays, origin = "country.name", destination = "iso3c")) |> # on génère l'isocode
   filter(!is.na(iso_code2)) # on supprime les NA
 
-# on fusionne le tableau 2020 avec les données world_map
-nourriture_map<-inner_join(nourriture_2020, world_map, by = c("iso_code2" = "iso_code2"))
+# on fusionne le tableau 2016 avec les données world_map
+nourriture_map<-inner_join(nourriture_2016, world_map, by = c("iso_code2" = "iso_code2"))
 
 # Création du graphique de la nourriture
 ggplot(nourriture_map)+
@@ -477,6 +478,10 @@ ggplot(nourriture_map)+
 knitr::include_app("https://mmaillet.shinyapps.io/Analyses_Mondiales/?_ga=2.94373340.1524096991.1655824260-1647850945.1655373829")
 
 ```
+
+
+
+
 <!-- ```{r CREATION DES FICHIERS POUR SHINY APP PAYS} -->
 
 <!-- # on crée 3 fichiers dans lesquels on garde la liste des pays pour la shinyApp.  -->
